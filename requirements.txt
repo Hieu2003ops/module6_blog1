@@ -5,3 +5,6 @@ numpy
 seaborn
 matplotlib
 scikit-learn
+wordcloud
+textblob
+nltk
