@@ -15,6 +15,8 @@ nltk.download("stopwords", quiet=True)
 nltk.download("wordnet", quiet=True)
 nltk.download("omw-1.4", quiet=True)
 
+nltk.download('vader_lexicon', quiet=True)  # VADER lexicon
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 def clean_dataset(
     raw_csv_path="/opt/airflow/data/raw/Amazon_Reviews.csv",
@@ -233,7 +235,27 @@ def clean_dataset(
 
     df["full_review"] = df["full_review"].apply(lemmatize)
 
-    # ---------- 11. Save cleaned data ----------
+    # ---------- 11. Sentiment: polarity_score + 3-class label ----------
+    sen = SentimentIntensityAnalyzer()
+
+    def vader_label(text, pos_th=0.05, neg_th=-0.05):
+
+        scores = sen.polarity_scores(text)
+        c = scores["compound"]
+        if c >= pos_th:
+            return "pos"
+        elif c <= neg_th:
+            return "neg"
+        else:
+            return "neu"
+
+    df["polarity_score"] = df["full_review"].apply(
+        lambda x: sen.polarity_scores(x)["compound"]
+    )
+
+    df["Sentiment_Label"] = df["full_review"].apply(vader_label)
+
+    # ---------- 12. Save cleaned CSV ----------
     df.to_csv(save_csv_path, index=False)
 
     print(f"[CLEAN] Saved cleaned dataset to: {save_csv_path}")
